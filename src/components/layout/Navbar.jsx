@@ -32,9 +32,6 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 cursor-pointer">
-          <div className="border-2 border-[#5FE3CF] rounded-xl p-2 bg-white/5">
-            <Code2 size={22} className="text-[#F5B544]" />
-          </div>
           <h1 className="text-2xl font-bold">
             <span className="text-[#F5B544]">Shop</span>
             <span className="text-[#5FE3CF]">Tech</span>
