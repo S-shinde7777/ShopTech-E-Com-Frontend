@@ -1,51 +1,29 @@
-const ORDERS_KEY = "shoptech_orders";
+import { apiFetch } from './api';
 
 export const orderService = {
-  getAllOrders: () => {
-    return JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+  getAllOrders: async () => {
+    const data = await apiFetch('/orders');
+    return data.orders.map(o => ({ ...o, id: o._id }));
   },
 
-  getUserOrders: (userId) => {
-    const orders = orderService.getAllOrders();
-    return orders.filter((o) => o.userId === Number(userId));
+  getUserOrders: async (userId) => {
+    const data = await apiFetch('/orders/my');
+    return data.orders.map(o => ({ ...o, id: o._id }));
   },
 
-  createOrder: (orderData) => {
-    const orders = orderService.getAllOrders();
-    const newOrder = {
-      ...orderData,
-      id: orders.length > 0 ? Math.max(...orders.map((o) => o.id)) + 1 : 1001, // Start order IDs at 1001
-      status: "Pending",
-      date: new Date().toISOString(),
-    };
-
-    orders.unshift(newOrder); // Add to beginning so recent orders show first
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-
-    // Optional: Decrement stock of products
-    try {
-      const products = JSON.parse(localStorage.getItem("shoptech_products")) || [];
-      newOrder.items.forEach((item) => {
-        const prodIndex = products.findIndex((p) => p.id === item.id);
-        if (prodIndex !== -1) {
-          products[prodIndex].stock = Math.max(0, (products[prodIndex].stock || 10) - item.quantity);
-        }
-      });
-      localStorage.setItem("shoptech_products", JSON.stringify(products));
-    } catch (e) {
-      console.error("Failed to update stock", e);
-    }
-
-    return newOrder;
+  createOrder: async (orderData) => {
+    const data = await apiFetch('/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+    return { ...data.order, id: data.order._id };
   },
 
-  updateOrderStatus: (orderId, status) => {
-    const orders = orderService.getAllOrders();
-    const index = orders.findIndex((o) => o.id === Number(orderId));
-    if (index === -1) return null;
-
-    orders[index].status = status;
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-    return orders[index];
-  }
+  updateOrderStatus: async (orderId, status) => {
+    const data = await apiFetch(`/orders/${orderId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+    return { ...data.order, id: data.order._id };
+  },
 };

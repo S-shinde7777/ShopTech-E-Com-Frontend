@@ -39,26 +39,22 @@ export default function Register() {
 
     setLoading(true);
 
-    // Simulate net latency
-    setTimeout(() => {
-      try {
-        register({ name, email, password, role: "customer" });
-        setSuccess(true);
-        // Reset form
-        setName("");
-        setEmail("");
-        setPassword("");
-        setRepeatPassword("");
-        setAgree(false);
-        // Automatically redirect to login after 2 seconds
-        setTimeout(() => {
-          navigate("/login");
-        }, 2200);
-      } catch (err) {
-        setError(err.message || "Failed to create account. Email might be already in use.");
-        setLoading(false);
-      }
-    }, 1200);
+    try {
+      await register({ name, email, password, role: "customer" });
+      setSuccess(true);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRepeatPassword("");
+      setAgree(false);
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to create account. Email might be already in use.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

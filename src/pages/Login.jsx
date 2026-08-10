@@ -34,21 +34,18 @@ export default function Login() {
 
     setLoading(true);
 
-    // Simulate net latency
-    setTimeout(() => {
-      try {
-        const loggedUser = login(email, password);
-        // Redirect based on role
-        if (loggedUser.role === "admin") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/home");
-        }
-      } catch (err) {
-        setError(err.message || "Invalid credentials. Please try again.");
-        setLoading(false);
+    try {
+      const loggedUser = await login(email, password);
+      if (loggedUser.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/home");
       }
-    }, 1000);
+    } catch (err) {
+      setError(err.message || "Invalid credentials. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

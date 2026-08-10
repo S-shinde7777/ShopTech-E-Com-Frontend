@@ -1,150 +1,79 @@
-import initialProducts from "../data/products";
-import initialCategories from "../data/categories";
-
-const PRODUCTS_KEY = "shoptech_products";
-const CATEGORIES_KEY = "shoptech_categories";
-
-// Seed data helper
-const seedData = () => {
-  if (!localStorage.getItem(PRODUCTS_KEY)) {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialProducts));
-  }
-  if (!localStorage.getItem(CATEGORIES_KEY)) {
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(initialCategories));
-  }
-};
-
-// Initialize
-seedData();
+import { apiFetch } from './api';
 
 export const productService = {
   // PRODUCTS
-  getProducts: () => {
-    seedData();
-    return JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || [];
+  getProducts: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.append('search', filters.search);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+    if (filters.sort) params.append('sort', filters.sort);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const data = await apiFetch(`/products${queryString}`);
+    
+    // Map _id to id for frontend compatibility
+    return data.products.map(p => ({ ...p, id: p._id }));
   },
 
-  getProductById: (id) => {
-    const products = productService.getProducts();
-    return products.find((p) => p.id === Number(id));
-  },
-
-  createProduct: (productData) => {
-    const products = productService.getProducts();
-    const newProduct = {
-      ...productData,
-      id: products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
-      price: Number(productData.price),
-      oldPrice: productData.oldPrice ? Number(productData.oldPrice) : null,
-      rating: productData.rating ? Number(productData.rating) : 4.0,
-      stock: productData.stock ? Number(productData.stock) : 10,
-    };
-    
-    products.push(newProduct);
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-    
-    // Update items count in category
-    productService.adjustCategoryCount(productData.category, 1);
-    
-    return newProduct;
-  },
-
-  updateProduct: (id, productData) => {
-    const products = productService.getProducts();
-    const index = products.findIndex((p) => p.id === Number(id));
-    if (index === -1) return null;
-
-    const oldCategory = products[index].category;
-    const updatedProduct = {
-      ...products[index],
-      ...productData,
-      id: Number(id),
-      price: Number(productData.price),
-      oldPrice: productData.oldPrice ? Number(productData.oldPrice) : null,
-      rating: productData.rating ? Number(productData.rating) : products[index].rating,
-      stock: productData.stock !== undefined ? Number(productData.stock) : products[index].stock,
-    };
-
-    products[index] = updatedProduct;
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-
-    // If category changed, adjust counts
-    if (oldCategory !== productData.category) {
-      productService.adjustCategoryCount(oldCategory, -1);
-      productService.adjustCategoryCount(productData.category, 1);
+  getProductById: async (id) => {
+    const data = await apiFetch(`/products/${id}`);
+    if (data.product) {
+      return { ...data.product, id: data.product._id };
     }
-
-    return updatedProduct;
+    return null;
   },
 
-  deleteProduct: (id) => {
-    const products = productService.getProducts();
-    const product = products.find((p) => p.id === Number(id));
-    if (!product) return false;
+  createProduct: async (productData) => {
+    const data = await apiFetch('/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+    return { ...data.product, id: data.product._id };
+  },
 
-    const filtered = products.filter((p) => p.id !== Number(id));
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(filtered));
+  updateProduct: async (id, productData) => {
+    const data = await apiFetch(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(productData),
+    });
+    return { ...data.product, id: data.product._id };
+  },
 
-    // Decrement items count in category
-    productService.adjustCategoryCount(product.category, -1);
-    return true;
+  deleteProduct: async (id) => {
+    const data = await apiFetch(`/products/${id}`, {
+      method: 'DELETE',
+    });
+    return data.success;
   },
 
   // CATEGORIES
-  getCategories: () => {
-    seedData();
-    return JSON.parse(localStorage.getItem(CATEGORIES_KEY)) || [];
+  getCategories: async () => {
+    const data = await apiFetch('/categories');
+    return data.categories.map(c => ({ ...c, id: c._id }));
   },
 
-  createCategory: (categoryData) => {
-    const categories = productService.getCategories();
-    
-    // Check if category already exists
-    const exists = categories.find((c) => c.name.toLowerCase() === categoryData.name.toLowerCase());
-    if (exists) return exists;
-
-    const newCategory = {
-      ...categoryData,
-      id: categories.length > 0 ? Math.max(...categories.map((c) => c.id)) + 1 : 1,
-      items: 0,
-      image: categoryData.image || "https://cdn-icons-png.flaticon.com/512/3081/3081559.png"
-    };
-
-    categories.push(newCategory);
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-    return newCategory;
+  createCategory: async (categoryData) => {
+    const data = await apiFetch('/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData),
+    });
+    return { ...data.category, id: data.category._id };
   },
 
-  updateCategory: (id, categoryData) => {
-    const categories = productService.getCategories();
-    const index = categories.findIndex((c) => c.id === Number(id));
-    if (index === -1) return null;
-
-    const updatedCategory = {
-      ...categories[index],
-      ...categoryData,
-      id: Number(id)
-    };
-
-    categories[index] = updatedCategory;
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-    return updatedCategory;
+  updateCategory: async (id, categoryData) => {
+    const data = await apiFetch(`/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
+    });
+    return { ...data.category, id: data.category._id };
   },
 
-  deleteCategory: (id) => {
-    const categories = productService.getCategories();
-    const filtered = categories.filter((c) => c.id !== Number(id));
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(filtered));
-    return true;
+  deleteCategory: async (id) => {
+    const data = await apiFetch(`/categories/${id}`, {
+      method: 'DELETE',
+    });
+    return data.success;
   },
-
-  adjustCategoryCount: (categoryName, amount) => {
-    if (!categoryName) return;
-    const categories = productService.getCategories();
-    const index = categories.findIndex((c) => c.name.toLowerCase() === categoryName.toLowerCase());
-    if (index !== -1) {
-      categories[index].items = Math.max(0, categories[index].items + amount);
-      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-    }
-  }
 };

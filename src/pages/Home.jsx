@@ -8,6 +8,7 @@ import { productService } from "../services/productService";
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   // Filtering & Sorting States
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,8 +19,22 @@ const Home = () => {
 
   // Load from service on mount
   useEffect(() => {
-    setProducts(productService.getProducts());
-    setCategories(productService.getCategories());
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [prods, cats] = await Promise.all([
+          productService.getProducts(),
+          productService.getCategories(),
+        ]);
+        setProducts(prods || []);
+        setCategories(cats || []);
+      } catch (err) {
+        console.error("Failed to load home data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const handleCategorySelect = (categoryName) => {
@@ -118,7 +133,7 @@ const Home = () => {
           {selectedCategory && (
             <button
               onClick={() => setSelectedCategory(null)}
-              className="text-[#F5A623] hover:underline text-sm font-semibold"
+              className="text-[#F5A623] hover:underline text-sm font-semibold cursor-pointer"
             >
               Clear Category Filter
             </button>
@@ -150,8 +165,14 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Empty State */}
-        {filteredProducts.length === 0 ? (
+        {/* Loading Spinner */}
+        {loading ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center">
+            <div className="w-12 h-12 border-4 border-[#5FE3CF] border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-400">Loading products from backend API...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          /* Empty State */
           <div className="bg-[#171B26] border border-gray-800 rounded-3xl p-16 text-center max-w-lg mx-auto mt-10">
             <span className="text-5xl">🔍</span>
             <h3 className="text-xl font-bold text-white mt-4">No Products Found</h3>

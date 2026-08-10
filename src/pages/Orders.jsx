@@ -9,9 +9,17 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    if (user) {
-      setOrders(orderService.getUserOrders(user.id));
-    }
+    const fetchOrders = async () => {
+      if (user) {
+        try {
+          const data = await orderService.getUserOrders(user.id);
+          setOrders(data || []);
+        } catch (err) {
+          console.error("Failed to load user orders", err);
+        }
+      }
+    };
+    fetchOrders();
   }, [user]);
 
   // Helper for status badge styling
@@ -85,7 +93,7 @@ const Orders = () => {
                     <span className="text-gray-500 text-xs uppercase block">Order Placed</span>
                     <span className="text-white font-medium flex items-center gap-1.5 mt-1">
                       <Calendar size={14} className="text-cyan-300" />
-                      {formatDate(order.date)}
+                      {formatDate(order.date || order.createdAt)}
                     </span>
                   </div>
                   <div>

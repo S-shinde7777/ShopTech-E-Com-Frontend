@@ -24,38 +24,43 @@ const ProductForm = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load categories for selector
-    const cats = productService.getCategories();
-    setCategories(cats);
+    const initForm = async () => {
+      try {
+        const cats = await productService.getCategories();
+        setCategories(cats || []);
 
-    // If edit mode, load product details
-    if (isEditMode) {
-      const product = productService.getProductById(id);
-      if (product) {
-        setFormData({
-          name: product.name,
-          category: product.category,
-          price: product.price.toString(),
-          oldPrice: product.oldPrice ? product.oldPrice.toString() : "",
-          rating: product.rating ? product.rating.toString() : "4.5",
-          stock: product.stock !== undefined ? product.stock.toString() : "10",
-          image: product.image,
-          description: product.description
-        });
-      } else {
-        setError("Product not found");
+        if (isEditMode) {
+          const product = await productService.getProductById(id);
+          if (product) {
+            setFormData({
+              name: product.name,
+              category: product.category,
+              price: product.price.toString(),
+              oldPrice: product.oldPrice ? product.oldPrice.toString() : "",
+              rating: product.rating ? product.rating.toString() : "4.5",
+              stock: product.stock !== undefined ? product.stock.toString() : "10",
+              image: product.image,
+              description: product.description,
+            });
+          } else {
+            setError("Product not found");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load form data", err);
       }
-    }
+    };
+    initForm();
   }, [id, isEditMode]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -82,13 +87,13 @@ const ProductForm = () => {
         rating: Number(formData.rating) || 4.5,
         stock: Number(formData.stock) || 10,
         image: formData.image.trim(),
-        description: formData.description.trim()
+        description: formData.description.trim(),
       };
 
       if (isEditMode) {
-        productService.updateProduct(id, payload);
+        await productService.updateProduct(id, payload);
       } else {
-        productService.createProduct(payload);
+        await productService.createProduct(payload);
       }
 
       navigate("/admin/products");

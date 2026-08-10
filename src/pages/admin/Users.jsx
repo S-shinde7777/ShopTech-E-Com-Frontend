@@ -24,8 +24,13 @@ const Users = () => {
     loadUsers();
   }, []);
 
-  const loadUsers = () => {
-    setUsers(authService.getUsers());
+  const loadUsers = async () => {
+    try {
+      const data = await authService.getUsers();
+      setUsers(data || []);
+    } catch (err) {
+      console.error("Failed to load users", err);
+    }
   };
 
   const showSuccess = (msg) => {
@@ -33,11 +38,15 @@ const Users = () => {
     setTimeout(() => setSuccessMsg(""), 3000);
   };
 
-  const handleRoleChange = (userId, newRole) => {
+  const handleRoleChange = async (userId, newRole) => {
     if (userId === currentUser.id) return; // Block self-edit
-    authService.updateUserRole(userId, newRole);
-    loadUsers();
-    showSuccess(`User role updated to "${newRole}" successfully.`);
+    try {
+      await authService.updateUserRole(userId, newRole);
+      await loadUsers();
+      showSuccess(`User role updated to "${newRole}" successfully.`);
+    } catch (err) {
+      console.error("Failed to update user role", err);
+    }
   };
 
   const handleDeleteConfirm = (user) => {
@@ -45,12 +54,17 @@ const Users = () => {
     setDeleteConfirm(user);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteConfirm) return;
-    authService.deleteUser(deleteConfirm.id);
-    loadUsers();
-    setDeleteConfirm(null);
-    showSuccess(`User "${deleteConfirm.name}" has been deleted.`);
+    try {
+      await authService.deleteUser(deleteConfirm.id);
+      await loadUsers();
+      showSuccess(`User "${deleteConfirm.name}" has been deleted.`);
+    } catch (err) {
+      console.error("Failed to delete user", err);
+    } finally {
+      setDeleteConfirm(null);
+    }
   };
 
   const filteredUsers = users.filter(

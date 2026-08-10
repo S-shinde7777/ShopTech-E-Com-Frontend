@@ -15,11 +15,16 @@ const Categories = () => {
     loadCategories();
   }, []);
 
-  const loadCategories = () => {
-    setCategories(productService.getCategories());
+  const loadCategories = async () => {
+    try {
+      const cats = await productService.getCategories();
+      setCategories(cats || []);
+    } catch (err) {
+      console.error("Failed to load categories", err);
+    }
   };
 
-  const handleAddCategory = (e) => {
+  const handleAddCategory = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
@@ -29,10 +34,10 @@ const Categories = () => {
     try {
       const payload = {
         name: name.trim(),
-        image: image.trim() || undefined // uses default in service if empty
+        image: image.trim() || undefined
       };
 
-      productService.createCategory(payload);
+      await productService.createCategory(payload);
       setSuccess(true);
       setName("");
       setImage("");
@@ -40,15 +45,18 @@ const Categories = () => {
 
       setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      setError("Failed to create category.");
+      setError(err.message || "Failed to create category.");
     }
   };
 
-  const handleDeleteCategory = (id) => {
-    // Basic verification confirmation
-    if (window.confirm("Are you sure you want to delete this category? This will not delete the products under it, but their category association might show as default.")) {
-      productService.deleteCategory(id);
-      loadCategories();
+  const handleDeleteCategory = async (id) => {
+    if (window.confirm("Are you sure you want to delete this category?")) {
+      try {
+        await productService.deleteCategory(id);
+        loadCategories();
+      } catch (err) {
+        console.error("Failed to delete category", err);
+      }
     }
   };
 

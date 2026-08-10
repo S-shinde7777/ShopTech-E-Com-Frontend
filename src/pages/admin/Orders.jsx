@@ -11,24 +11,32 @@ const Orders = () => {
     loadOrders();
   }, []);
 
-  const loadOrders = () => {
-    setOrders(orderService.getAllOrders());
+  const loadOrders = async () => {
+    try {
+      const data = await orderService.getAllOrders();
+      setOrders(data || []);
+    } catch (err) {
+      console.error("Failed to load admin orders", err);
+    }
   };
 
-  const handleStatusChange = (orderId, newStatus) => {
-    orderService.updateOrderStatus(orderId, newStatus);
-    loadOrders(); // reload data
-    
-    // Update the expanded modal details if open
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({
-        ...selectedOrder,
-        status: newStatus
-      });
-    }
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await orderService.updateOrderStatus(orderId, newStatus);
+      await loadOrders();
+      
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          status: newStatus
+        });
+      }
 
-    setSuccessMsg(`Order #${orderId} status updated to ${newStatus}`);
-    setTimeout(() => setSuccessMsg(""), 3000);
+      setSuccessMsg(`Order status updated to ${newStatus}`);
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      console.error("Failed to update order status", err);
+    }
   };
 
   const getStatusBadge = (status) => {

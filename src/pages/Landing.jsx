@@ -7,10 +7,16 @@ const Landing = () => {
   const [bestSellers, setBestSellers] = useState([]);
 
   useEffect(() => {
-    // Get top 3 rated products
-    const products = productService.getProducts();
-    const sorted = [...products].sort((a, b) => b.rating - a.rating).slice(0, 3);
-    setBestSellers(sorted);
+    const fetchBestSellers = async () => {
+      try {
+        const products = await productService.getProducts();
+        const sorted = [...products].sort((a, b) => b.rating - a.rating).slice(0, 3);
+        setBestSellers(sorted);
+      } catch (err) {
+        console.error("Failed to load best sellers", err);
+      }
+    };
+    fetchBestSellers();
   }, []);
 
   return (

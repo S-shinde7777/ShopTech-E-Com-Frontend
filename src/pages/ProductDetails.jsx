@@ -16,8 +16,15 @@ const ProductDetails = () => {
   const [addedMessage, setAddedMessage] = useState(false);
 
   useEffect(() => {
-    const data = productService.getProductById(id);
-    setProduct(data);
+    const fetchProduct = async () => {
+      try {
+        const data = await productService.getProductById(id);
+        setProduct(data);
+      } catch (err) {
+        console.error("Failed to load product details", err);
+      }
+    };
+    fetchProduct();
   }, [id]);
 
   if (!product) {

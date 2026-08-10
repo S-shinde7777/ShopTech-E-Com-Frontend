@@ -40,7 +40,7 @@ const Checkout = () => {
     });
   };
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -53,40 +53,37 @@ const Checkout = () => {
 
     setLoading(true);
 
-    // Simulate short network delay
-    setTimeout(() => {
-      try {
-        const orderData = {
-          userId: user?.id || 999,
-          userEmail: user?.email || "guest@shoptech.com",
-          shippingDetails: {
-            fullName: formData.fullName,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-            zipCode: formData.zipCode
-          },
-          items: cartItems.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-            category: item.category
-          })),
-          paymentMethod: formData.paymentMethod,
-          totalAmount: totalAmount
-        };
+    try {
+      const orderData = {
+        userId: user?.id,
+        userEmail: user?.email || "guest@shoptech.com",
+        shippingDetails: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          zipCode: formData.zipCode
+        },
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          category: item.category
+        })),
+        paymentMethod: formData.paymentMethod,
+        totalAmount: totalAmount
+      };
 
-        const createdOrder = orderService.createOrder(orderData);
-        setOrderSuccess(createdOrder);
-        clearCart(); // Empty the cart upon successful order
-      } catch (err) {
-        setError("Failed to process order. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    }, 1500);
+      const createdOrder = await orderService.createOrder(orderData);
+      setOrderSuccess(createdOrder);
+      clearCart(); // Empty the cart upon successful order
+    } catch (err) {
+      setError(err.message || "Failed to process order. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // If order was successfully placed, display receipt details

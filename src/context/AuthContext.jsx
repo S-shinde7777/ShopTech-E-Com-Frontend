@@ -9,18 +9,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if session exists on load
-    const session = authService.getCurrentSession();
-    if (session) {
-      setUser(session.user);
-      setToken(session.token);
-    }
-    setLoading(false);
+    // Verify session & JWT on load
+    const initAuth = async () => {
+      const session = authService.getCurrentSession();
+      if (session) {
+        setUser(session.user);
+        setToken(session.token);
+        // Optionally verify token with backend
+        try {
+          const freshUser = await authService.verifyToken();
+          if (freshUser) {
+            setUser(freshUser);
+          } else {
+            setUser(null);
+            setToken(null);
+          }
+        } catch (e) {
+          // If server is offline, keep cached session
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = (email, password) => {
+  const login = async (email, password) => {
     try {
-      const session = authService.login(email, password);
+      const session = await authService.login(email, password);
       setUser(session.user);
       setToken(session.token);
       return session.user;
@@ -29,9 +45,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = (userData) => {
+  const register = async (userData) => {
     try {
-      return authService.register(userData);
+      const newUser = await authService.register(userData);
+      return newUser;
     } catch (error) {
       throw error;
     }

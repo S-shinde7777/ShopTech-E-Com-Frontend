@@ -12,15 +12,24 @@ const Products = () => {
     loadProducts();
   }, []);
 
-  const loadProducts = () => {
-    setProducts(productService.getProducts());
+  const loadProducts = async () => {
+    try {
+      const data = await productService.getProducts();
+      setProducts(data || []);
+    } catch (err) {
+      console.error("Failed to load products", err);
+    }
   };
 
-  const handleDelete = (id) => {
-    const success = productService.deleteProduct(id);
-    if (success) {
-      loadProducts();
-      setDeleteConfirm(null);
+  const handleDelete = async (id) => {
+    try {
+      const success = await productService.deleteProduct(id);
+      if (success) {
+        loadProducts();
+        setDeleteConfirm(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete product", err);
     }
   };
 
